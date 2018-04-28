@@ -1,5 +1,5 @@
-output "instances" {
-  value = "${compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.id)))}"
+output "instance" {
+  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.id))))}"
 }
 
 output "public_ip" {
