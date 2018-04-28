@@ -3,7 +3,7 @@ output "instance" {
 }
 
 output "public_ip" {
-  value = "${compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.public_ip)))}"
+  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.public_ip))))}"
 }
 
 output autoscaling_group_id {
