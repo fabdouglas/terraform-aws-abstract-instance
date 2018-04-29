@@ -2,7 +2,7 @@ locals {
   period            = "${var.it ? 60 * 60 : (60 * 60 * 24)}"
   is_spot           = "${var.spot_price != ""}"
   need_lb           = "${var.max_size > 1}"
-  need_asg          = "${local.need_lb || local.is_spot}"
+  need_asg          = "${local.need_lb}"
   min_size          = "${local.need_lb ? var.min_size < 0 ? var.max_size : var.min_size : 1}"
   max_size          = "${local.need_lb ? var.max_size : 1}"
   desired_capacity  = "${local.need_lb ? var.desired_capacity < 0 ? local.min_size : var.desired_capacity : 1}"
@@ -11,8 +11,35 @@ locals {
   tags              = "${merge(var.tags, map("Name", var.name))}"
 }
 
+resource "aws_spot_instance_request" "this" {
+  count                  = "${(!local.need_lb && is_spot) ? var.count : 0}"
+  ami                    = "${var.ami}"
+  subnet_id              = "${element(var.subnets, count.index)}"
+  instance_type          = "${var.instance_type}"
+  vpc_security_group_ids = ["${var.security_groups}"]
+  key_name               = "${var.key_name}"
+  tags                   = "${merge(var.tags, map("Name", "${var.count == 1 ? var.name : "${var.name}[${count.index}]"}"))}"
+  volume_tags            = "${var.tags}"
+  root_block_device      = ["${var.root_block_device}"]
+  ebs_block_device       = ["${var.ebs_block_device}"]
+  spot_price             = "${var.spot_price}"
+
+  connection {
+    type = "ssh"
+    user = "ec2-user"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum -y update",
+      "sudo yum -y install initscripts nginx",
+      "sudo service nginx start",
+    ]
+  }
+}
+
 resource "aws_instance" "this" {
-  count                  = "${local.need_lb ? 0 : var.count}"
+  count                  = "${(local.need_lb || is_spot) ? 0 : var.count}"
   ami                    = "${var.ami}"
   subnet_id              = "${element(var.subnets, count.index)}"
   instance_type          = "${var.instance_type}"

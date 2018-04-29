@@ -1,9 +1,9 @@
 output "instance" {
-  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.id))))}"
+  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", concat(aws_instance.this.*.id, aws_spot_instance_request.this.*.id)))))}"
 }
 
 output "public_ip" {
-  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", aws_instance.this.*.public_ip))))}"
+  value = "${join(",",compact(split(",", local.need_asg ? "" : join(",", concat(aws_instance.this.*.public_ip, aws_spot_instance_request.this.*.public_ip)))))}"
 }
 
 output autoscaling_group_id {
